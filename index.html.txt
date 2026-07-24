@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard eProject - Realtime</title>
+    
+    <!-- Memanggil Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #f0f2f5; color: #333; }
+        .header { background-color: #0D5DA3; color: white; padding: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .container { padding: 20px; max-width: 1000px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid #0D5DA3; display: flex; justify-content: space-between; align-items: center; }
+        .info h3 { margin: 0 0 5px 0; color: #0D5DA3; }
+        .info p { margin: 2px 0; font-size: 14px; color: #666; }
+        .volume { text-align: right; }
+        .vol-value { font-size: 20px; font-weight: bold; color: #2E7D32; }
+        .status-online { color: #4CAF50; font-size: 12px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Dashboard Opname eProject</h1>
+    <p id="sync-status">Menghubungkan ke database...</p>
+</div>
+
+<div class="container" id="data-list">
+    <!-- Data dari lapangan akan muncul di sini secara otomatis -->
+</div>
+
+<script>
+    // === GANTI KODE DI BAWAH INI DENGAN firebaseConfig ANDA (DARI LANGKAH 2) ===
+    const firebaseConfig = {
+        apiKey: "AIzaSy...",
+        authDomain: "eproject-xxxxx.firebaseapp.com",
+        projectId: "eproject-xxxxx",
+        storageBucket: "eproject-xxxxx.appspot.com",
+        messagingSenderId: "...",
+        appId: "..."
+    };
+    // =========================================================================
+
+    // Inisialisasi Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Fungsi untuk mengambil data secara Realtime
+    db.collection("opnames").orderBy("timestamp", "desc").onSnapshot((snapshot) => {
+        const listContainer = document.getElementById("data-list");
+        const statusText = document.getElementById("sync-status");
+        
+        listContainer.innerHTML = ""; // Bersihkan tampilan lama
+        statusText.innerHTML = "● Terhubung (Realtime)";
+        statusText.className = "status-online";
+
+        if (snapshot.empty) {
+            listContainer.innerHTML = "<p style='text-align:center'>Belum ada data opname masuk.</p>";
+            return;
+        }
+
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            const card = `
+                <div class="card">
+                    <div class="info">
+                        <h3>${data.itemName || 'Tanpa Nama Item'}</h3>
+                        <p><b>Ruas:</b> ${data.roadName || '-'}</p>
+                        <p><b>Lokasi:</b> ${data.location || '-'}</p>
+                        <p><b>Tanggal:</b> ${data.dateString || '-'}</p>
+                    </div>
+                    <div class="volume">
+                        <p>Volume Total</p>
+                        <span class="vol-value">${data.calculatedVolume ? data.calculatedVolume.toFixed(3) : '0.000'} ${data.unit || ''}</span>
+                    </div>
+                </div>
+            `;
+            listContainer.innerHTML += card;
+        });
+    }, (error) => {
+        console.error("Error: ", error);
+        document.getElementById("sync-status").innerHTML = "Gagal terhubung ke database.";
+    });
+</script>
+
+</body>
+</html>
