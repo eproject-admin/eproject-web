@@ -35,12 +35,12 @@
 <script>
     // === GANTI KODE DI BAWAH INI DENGAN firebaseConfig ANDA (DARI LANGKAH 2) ===
     const firebaseConfig = {
-        apiKey: "AIzaSy...",
-        authDomain: "eproject-xxxxx.firebaseapp.com",
-        projectId: "eproject-xxxxx",
-        storageBucket: "eproject-xxxxx.appspot.com",
-        messagingSenderId: "...",
-        appId: "..."
+        apiKey: "AIzaSyBI1K_EpPPGTPeXlcZJhKzEYwn3QFa59II",
+        authDomain: "eproject-db4a6.firebaseapp.com",
+        projectId: "eproject-db4a6",
+        storageBucket: "eproject-db4a6.firebasestorage.app",
+        messagingSenderId: "497280440732",
+        appId: "1:497280440732:web:295bf5dd17515ff1349059"
     };
     // =========================================================================
 
@@ -49,42 +49,42 @@
     const db = firebase.firestore();
 
     // Fungsi untuk mengambil data secara Realtime
-    db.collection("opnames").orderBy("timestamp", "desc").onSnapshot((snapshot) => {
-        const listContainer = document.getElementById("data-list");
-        const statusText = document.getElementById("sync-status");
-        
-        listContainer.innerHTML = ""; // Bersihkan tampilan lama
-        statusText.innerHTML = "● Terhubung (Realtime)";
-        statusText.className = "status-online";
+    firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const listContainer = document.getElementById("data-list");
 
-        if (snapshot.empty) {
-            listContainer.innerHTML = "<p style='text-align:center'>Belum ada data opname masuk.</p>";
-            return;
-        }
+// Ambil data tanpa orderBy dulu (untuk menghindari error Index)
+db.collection("opnames").onSnapshot((snapshot) => {
+    const statusText = document.getElementById("sync-status");
+    listContainer.innerHTML = ""; 
+    statusText.innerHTML = "● Terhubung ke Project: eproject-db4a6";
+    statusText.style.color = "#4CAF50";
 
-        snapshot.forEach((doc) => {
-            const data = doc.data();
-            const card = `
-                <div class="card">
-                    <div class="info">
-                        <h3>${data.itemName || 'Tanpa Nama Item'}</h3>
-                        <p><b>Ruas:</b> ${data.roadName || '-'}</p>
-                        <p><b>Lokasi:</b> ${data.location || '-'}</p>
-                        <p><b>Tanggal:</b> ${data.dateString || '-'}</p>
-                    </div>
-                    <div class="volume">
-                        <p>Volume Total</p>
-                        <span class="vol-value">${data.calculatedVolume ? data.calculatedVolume.toFixed(3) : '0.000'} ${data.unit || ''}</span>
-                    </div>
+    if (snapshot.empty) {
+        listContainer.innerHTML = "<p style='text-align:center'>Koneksi sukses, tapi koleksi 'opnames' kosong.</p>";
+        return;
+    }
+
+    snapshot.forEach((doc) => {
+        const data = doc.data();
+        // Sesuai field di screenshot Anda: itemName, roadName, location, calculatedVolume
+        const card = `
+            <div class="card">
+                <div class="info">
+                    <h3>${data.itemName || 'Tanpa Nama Item'}</h3>
+                    <p><b>Ruas:</b> ${data.roadName || '-'}</p>
+                    <p><b>Lokasi:</b> ${data.location || '-'}</p>
+                    <p><b>Sisi:</b> ${data.side || '-'}</p>
                 </div>
-            `;
-            listContainer.innerHTML += card;
-        });
-    }, (error) => {
-        console.error("Error: ", error);
-        document.getElementById("sync-status").innerHTML = "Gagal terhubung ke database.";
+                <div class="volume">
+                    <p>Volume</p>
+                    <span class="vol-value">${data.calculatedVolume ? data.calculatedVolume.toFixed(3) : '0.000'}</span>
+                </div>
+            </div>
+        `;
+        listContainer.innerHTML += card;
     });
-</script>
-
-</body>
-</html>
+}, (error) => {
+    document.getElementById("sync-status").innerHTML = "Error: " + error.message;
+    document.getElementById("sync-status").style.color = "red";
+});
