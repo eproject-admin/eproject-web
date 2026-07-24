@@ -3,138 +3,202 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eProject Admin Dashboard</title>
+    <title>eProject Cloud Dashboard</title>
     
     <!-- SDK Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-firestore-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 
     <style>
-        :root { --accent: #0D5DA3; --bg: #F6F9FD; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg); margin: 0; }
-        .sidebar { background: white; height: 100vh; position: fixed; border-right: 1px solid #e0e0e0; padding-top: 20px; z-index: 1000; width: 240px; }
-        .nav-link { color: #64748B; padding: 12px 20px; font-weight: 600; border-radius: 8px; margin: 5px 15px; cursor: pointer; border:none; background:none; width: 210px; text-align: left; display: block;}
-        .nav-link.active { background-color: var(--accent); color: white !important; }
-        .main-content { margin-left: 240px; padding: 30px; }
-        .card-custom { background: white; border-radius: 16px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; padding: 20px; }
-        .stat-value { font-size: 28px; font-weight: 700; color: var(--accent); }
-        .tab-pane { display: none; }
+        :root { --accent: #0D5DA3; --accent-light: #E8F0FE; --bg: #F8FAFC; --sidebar-w: 260px; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: #1E293B; overflow-x: hidden; }
+        
+        /* Sidebar Styling */
+        .sidebar { background: white; height: 100vh; position: fixed; width: var(--sidebar-w); border-right: 1px solid #E2E8F0; padding: 25px 15px; z-index: 1000; transition: all 0.3s; }
+        .logo-box { padding: 0 15px 30px; border-bottom: 1px solid #F1F5F9; margin-bottom: 20px; }
+        .nav-link { color: #64748B; padding: 12px 18px; font-weight: 600; border-radius: 12px; margin-bottom: 8px; cursor: pointer; border: none; background: transparent; width: 100%; text-align: left; display: flex; align-items: center; gap: 12px; transition: 0.2s; }
+        .nav-link i { font-size: 18px; width: 24px; text-align: center; }
+        .nav-link:hover { background: var(--accent-light); color: var(--accent); }
+        .nav-link.active { background: var(--accent); color: white !important; box-shadow: 0 4px 12px rgba(13, 93, 163, 0.2); }
+        
+        /* Main Content */
+        .main-content { margin-left: var(--sidebar-w); padding: 40px; min-height: 100vh; }
+        .glass-card { background: white; border-radius: 20px; border: 1px solid rgba(255,255,255,0.7); box-shadow: 0 8px 30px rgba(0,0,0,0.04); padding: 25px; margin-bottom: 25px; transition: transform 0.2s; }
+        
+        /* Typography */
+        h2 { font-weight: 700; letter-spacing: -0.5px; }
+        .stat-label { font-size: 12px; font-weight: 700; color: #94A3B8; text-transform: uppercase; margin-bottom: 8px; }
+        
+        /* Table & Components */
+        .table-container { border-radius: 15px; overflow: hidden; border: 1px solid #F1F5F9; }
+        .table thead { background: #F8FAFC; }
+        .table th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748B; padding: 15px; }
+        .table td { padding: 15px; vertical-align: middle; border-bottom: 1px solid #F1F5F9; }
+        .progress { height: 8px; background: #F1F5F9; border-radius: 10px; overflow: hidden; }
+        .progress-bar { border-radius: 10px; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+
+        /* Modal */
+        #photoModal { display: none; position: fixed; z-index: 2000; top:0; left:0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.9); align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        #photoModal img { max-width: 85%; max-height: 85%; border-radius: 20px; border: 5px solid white; }
+
+        .tab-pane { display: none; animation: fadeIn 0.4s ease; }
         .tab-pane.active { display: block; }
-        .progress { height: 10px; border-radius: 5px; }
-        .table-custom thead { background: #F8FAFC; position: sticky; top: 0; }
-        .table-custom th { font-size: 12px; text-transform: uppercase; color: #64748B; padding: 12px; }
-        .table-custom td { font-size: 14px; padding: 12px; border-bottom: 1px solid #F1F5F9; }
-        #photoModal { display: none; position: fixed; z-index: 2000; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; }
-        #photoModal img { max-width: 90%; max-height: 90%; border-radius: 10px; }
-        .col-date { min-width: 110px; white-space: nowrap; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        @media (max-width: 992px) {
+            .sidebar { width: 80px; padding: 20px 10px; }
+            .sidebar .nav-link span, .sidebar .logo-box h4, .sidebar .logo-box small { display: none; }
+            .main-content { margin-left: 80px; padding: 20px; }
+        }
     </style>
 </head>
 <body>
 
 <div id="photoModal" onclick="this.style.display='none'"><img id="modalImg" src=""></div>
 
-<div class="container-fluid">
-    <div class="row">
-        <!-- Sidebar -->
-        <div class="col-md-2 sidebar d-flex flex-column">
-            <div class="px-4 mb-4 text-center">
-                <h4 class="fw-bold" style="color:var(--accent)">eProject</h4>
-                <small class="text-muted">BPJN Kaltara</small>
-            </div>
-            <div class="nav flex-column flex-grow-1">
-                <button id="btn-beranda" class="nav-link active" onclick="showTab('beranda')">🏠 Beranda</button>
-                <button id="btn-kontrak" class="nav-link" onclick="showTab('kontrak')">📑 Kontrak</button>
-                <button id="btn-opname" class="nav-link" onclick="showTab('opname')">📊 Opname</button>
-                <button id="btn-progres" class="nav-link" onclick="showTab('progres')">📈 Progres</button>
-                <div id="admin-menu" style="display:none;"><hr><button id="btn-users" class="nav-link text-danger" onclick="showTab('users')">⚙️ Kelola User</button></div>
-            </div>
-            <div class="p-3 text-center">
-                <button class="btn btn-sm text-muted" onclick="adminLogin()">🔓 Admin Mode</button>
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="logo-box">
+        <h4 class="fw-bold m-0" style="color:var(--accent)">eProject</h4>
+        <small class="text-muted">Cloud Monitoring</small>
+    </div>
+    <nav class="nav flex-column">
+        <button id="btn-beranda" class="nav-link active" onclick="showTab('beranda')"><i class="fa-solid fa-house"></i><span>Beranda</span></button>
+        <button id="btn-kontrak" class="nav-link" onclick="showTab('kontrak')"><i class="fa-solid fa-file-contract"></i><span>Data Kontrak</span></button>
+        <button id="btn-opname" class="nav-link" onclick="showTab('opname')"><i class="fa-solid fa-chart-simple"></i><span>Data Opname</span></button>
+        <button id="btn-progres" class="nav-link" onclick="showTab('progres')"><i class="fa-solid fa-chart-line"></i><span>Progres</span></button>
+        <div id="admin-menu" style="display:none;">
+            <hr>
+            <button id="btn-users" class="nav-link text-danger" onclick="showTab('users')"><i class="fa-solid fa-users-gear"></i><span>Kelola User</span></button>
+        </div>
+    </nav>
+    <div style="position: absolute; bottom: 20px; width: 85%;">
+        <button class="btn btn-light w-100 rounded-pill border" style="font-size: 12px;" onclick="adminLogin()">
+            <i class="fa-solid fa-shield-halved me-2"></i>Admin Mode
+        </button>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+    <header class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h2 id="tab-title" class="m-0">Beranda</h2>
+            <p id="conn-status" class="text-muted m-0 small">Menghubungkan ke server...</p>
+        </div>
+        <div style="max-width: 400px; width: 100%;">
+            <div class="input-group bg-white rounded-pill p-1 border shadow-sm">
+                <span class="input-group-text bg-transparent border-0"><i class="fa-solid fa-search text-muted"></i></span>
+                <input type="email" id="userEmailInput" class="form-control border-0 bg-transparent" placeholder="Cari Email User..." list="emailSuggestions">
+                <datalist id="emailSuggestions"></datalist>
+                <button class="btn btn-primary rounded-pill px-4" onclick="searchUser()">Cari</button>
             </div>
         </div>
+    </header>
 
-        <!-- Main Content -->
-        <div class="col-md-10 main-content">
-            <!-- Global Search & Header -->
-            <div class="card-custom mb-4">
-                <div class="row align-items-center">
-                    <div class="col-md-6">
-                        <h2 id="tab-title" class="fw-bold mb-0">Beranda</h2>
-                        <p id="tab-subtitle" class="text-muted mb-0 small">Menampilkan data paket pekerjaan secara realtime.</p>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="input-group">
-                            <input type="email" id="userEmailInput" class="form-control" placeholder="Cari Email User..." list="emailSuggestions">
-                            <datalist id="emailSuggestions"></datalist>
-                            <button class="btn btn-primary" style="background:var(--accent)" onclick="searchUser()">Cari Data</button>
-                        </div>
-                    </div>
+    <!-- TAB: BERANDA -->
+    <div id="tab-beranda" class="tab-pane active">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="glass-card text-center">
+                    <div class="stat-label">Progres Fisik Agregat</div>
+                    <div id="stat-progres" class="stat-value">0.00 %</div>
                 </div>
             </div>
-
-            <!-- Tab: Beranda -->
-            <div id="tab-beranda" class="tab-pane active">
-                <div class="row g-4 mb-4 text-center">
-                    <div class="col-md-4"><div class="card-custom"><h6>PROGRES FISIK</h6><div id="stat-progres" class="stat-value">0.00 %</div></div></div>
-                    <div class="col-md-4"><div class="card-custom"><h6>ITEM TERINPUT</h6><div id="stat-items" class="stat-value">0 Items</div></div></div>
-                    <div class="col-md-4"><div class="card-custom"><h6>NILAI KONTRAK</h6><div id="stat-nilai" class="stat-value" style="font-size: 18px;">Rp 0</div></div></div>
-                </div>
-                <div class="card-custom">
-                    <h6 class="fw-bold border-bottom pb-2 mb-3">Informasi Paket Pekerjaan</h6>
-                    <div id="info-paket" class="row g-3"></div>
-                </div>
-                <div class="card-custom mt-4">
-                    <h6 class="fw-bold border-bottom pb-2 mb-3">Rekapitulasi per Item</h6>
-                    <div id="rekap-per-item" class="row g-3"></div>
+            <div class="col-md-4">
+                <div class="glass-card text-center">
+                    <div class="stat-label">Item Terinput</div>
+                    <div id="stat-items" class="stat-value">0 Items</div>
                 </div>
             </div>
-
-            <!-- Tab: Kontrak -->
-            <div id="tab-kontrak" class="tab-pane">
-                <div class="card-custom bg-primary text-white mb-3 py-3">
-                    <div class="row text-center">
-                        <div class="col-12"><small>TOTAL NILAI KONTRAK (TERMASUK PPN)</small><h4 id="stat-nilai-kontrak-full" class="fw-bold mb-0">Rp 0</h4></div>
-                    </div>
-                </div>
-                <div class="card-custom px-0">
-                    <div class="table-responsive"><table class="table table-custom align-middle">
-                        <thead><tr><th>Divisi</th><th>Item Pekerjaan</th><th class="text-center">Satuan</th><th class="text-end">Volume</th><th class="text-end">Harga Satuan</th><th class="text-end">Jumlah Harga</th></tr></thead>
-                        <tbody id="table-kontrak-body"></tbody>
-                    </table></div>
+            <div class="col-md-4">
+                <div class="glass-card text-center">
+                    <div class="stat-label">Total Nilai Kontrak</div>
+                    <div id="stat-nilai" class="stat-value" style="font-size: 20px;">Rp 0,00</div>
                 </div>
             </div>
-
-            <!-- Tab: Opname -->
-            <div id="tab-opname" class="tab-pane">
-                <div class="card-custom mb-3"><input type="text" id="searchOpname" class="form-control" placeholder="Cari di tabel (Divisi, Item, Ruas...)" onkeyup="filterOpnameTable()"></div>
-                <div class="card-custom px-0">
-                    <div class="table-responsive"><table class="table table-custom align-middle">
-                        <thead><tr><th class="col-date">Tanggal</th><th>Ruas</th><th>Lokasi</th><th>Item Pekerjaan</th><th class="text-center">Satuan</th><th class="text-end">Volume</th><th class="text-center">Foto</th></tr></thead>
-                        <tbody id="table-opname-body"></tbody>
-                    </table></div>
-                </div>
+        </div>
+        <div class="glass-card mt-4">
+            <h6 class="fw-bold mb-4"><i class="fa-solid fa-circle-info me-2 text-primary"></i>Detail Informasi Paket</h6>
+            <div id="info-paket" class="row g-3">
+                <div class="col-12 text-center py-5 text-muted">Belum ada data. Cari email user di atas.</div>
             </div>
+        </div>
+        <div class="glass-card mt-4">
+            <h6 class="fw-bold mb-4"><i class="fa-solid fa-list-check me-2 text-primary"></i>Rekapitulasi Progres per Item</h6>
+            <div id="rekap-per-item" class="row g-4"></div>
+        </div>
+    </div>
 
-            <!-- Tab: Progres -->
-            <div id="tab-progres" class="tab-pane">
-                <div class="card-custom mb-4"><h5 class="fw-bold">Kurva S Progres</h5><canvas id="kurvaS" height="100"></canvas></div>
-                <div class="card-custom px-0"><h5 class="fw-bold px-4">Tabel Capaian Mingguan</h5><div id="table-progres-container" class="table-responsive"></div></div>
+    <!-- TAB: KONTRAK -->
+    <div id="tab-kontrak" class="tab-pane">
+        <div class="glass-card px-0">
+            <div class="table-responsive">
+                <table class="table table-custom align-middle m-0">
+                    <thead><tr><th>Divisi</th><th>Item Pekerjaan</th><th class="text-center">Satuan</th><th class="text-end">Volume</th><th class="text-end">Harga Satuan</th><th class="text-end">Total</th></tr></thead>
+                    <tbody id="table-kontrak-body"></tbody>
+                </table>
             </div>
+        </div>
+    </div>
 
-            <!-- Tab: Kelola User -->
-            <div id="tab-users" class="tab-pane">
-                <div class="card-custom"><h5>Tambah User</h5><div class="row g-2"><div class="col-md-5"><input id="newEmail" class="form-control" placeholder="Email"></div><div class="col-md-5"><input id="newPackage" class="form-control" placeholder="Nama Paket"></div><div class="col-md-2"><button class="btn btn-success w-100" onclick="addUser()">Simpan</button></div></div></div>
-                <div class="card-custom px-0"><table class="table table-custom"><thead><tr><th>Email</th><th>Paket</th><th>Aksi</th></tr></thead><tbody id="user-list-body"></tbody></table></div>
+    <!-- TAB: OPNAME -->
+    <div id="tab-opname" class="tab-pane">
+        <div class="glass-card mb-3">
+            <input type="text" id="searchOpname" class="form-control rounded-pill px-4 border" placeholder="Cari Ruas, Item, atau Lokasi..." onkeyup="filterOpnameTable()">
+        </div>
+        <div class="glass-card px-0">
+            <div class="table-responsive">
+                <table class="table table-custom align-middle m-0">
+                    <thead><tr><th>Tanggal</th><th>Ruas Jalan</th><th>Lokasi</th><th>Item Pekerjaan</th><th class="text-center">Satuan</th><th class="text-end">Volume</th><th class="text-center">Foto</th></tr></thead>
+                    <tbody id="table-opname-body"></tbody>
+                </table>
             </div>
+        </div>
+    </div>
+
+    <!-- TAB: PROGRES -->
+    <div id="tab-progres" class="tab-pane">
+        <div class="glass-card mb-4">
+            <h6 class="fw-bold mb-4"><i class="fa-solid fa-chart-area me-2 text-primary"></i>Kurva S Progres Pelaksanaan</h6>
+            <canvas id="kurvaS" height="100"></canvas>
+        </div>
+        <div class="glass-card px-0">
+            <h6 class="fw-bold px-4 mb-3">Tabel Capaian Mingguan</h6>
+            <div id="table-progres-container" class="table-responsive"></div>
+        </div>
+    </div>
+
+    <!-- TAB: KELOLA USER -->
+    <div id="tab-users" class="tab-pane">
+        <div class="glass-card">
+            <h6 class="fw-bold mb-3">Input User Baru</h6>
+            <div class="row g-3">
+                <div class="col-md-5"><input id="newEmail" class="form-control border-0 bg-light" placeholder="Alamat Email"></div>
+                <div class="col-md-5"><input id="newPackage" class="form-control border-0 bg-light" placeholder="Nama Paket Pekerjaan"></div>
+                <div class="col-md-2"><button class="btn btn-primary w-100 rounded-pill" onclick="addUser()">Simpan</button></div>
+            </div>
+        </div>
+        <div class="glass-card px-0">
+            <table class="table table-custom m-0">
+                <thead><tr><th>Email</th><th>Paket Pekerjaan</th><th>Status</th></tr></thead>
+                <tbody id="user-list-body"></tbody>
+            </table>
         </div>
     </div>
 </div>
 
 <script>
-    // === MASUKKAN CONFIG FIREBASE ANDA ===
+    // === GANTI DENGAN FIREBASE CONFIG ANDA ===
     const firebaseConfig = {
         apiKey: "AIzaSyBI1K_EpPPGTPeXlcZJhKzEYwn3QFa59II",
         authDomain: "eproject-db4a6.firebaseapp.com",
@@ -155,9 +219,13 @@
         db.collection("accounts").onSnapshot(s => { 
             allAccounts = s.docs.map(d => d.data()); 
             const dl = document.getElementById("emailSuggestions");
-            dl.innerHTML = ""; allAccounts.forEach(a => dl.innerHTML += `<option value="${a.email}">${a.packageName || ''}</option>`);
+            dl.innerHTML = ""; 
+            allAccounts.forEach(a => dl.innerHTML += `<option value="${a.email}">${a.packageName || ''}</option>`);
             renderUserList();
+            document.getElementById('conn-status').innerHTML = '<i class="fa-solid fa-circle-check text-success me-1"></i>Server Terhubung';
         });
+
+        // Listen to all collections
         db.collection("contracts").onSnapshot(s => { allContracts = s.docs.map(d => d.data()); updateUI(); });
         db.collection("opnames").onSnapshot(s => { allOpnames = s.docs.map(d => d.data()); updateUI(); });
         db.collection("schedules").onSnapshot(s => { allSchedules = s.docs.map(d => d.data()); updateUI(); });
@@ -169,9 +237,9 @@
         updateUI();
     }
 
-    function formatCurrency(v) { return "Rp " + v.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-    function formatDecimal(v) { return v.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-    function formatDecimal3(v) { return v.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 }); }
+    function formatCurrency(v) { return "Rp " + v.toLocaleString('id-ID', { minimumFractionDigits: 2 }); }
+    function formatDec(v) { return v.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function formatDec3(v) { return v.toLocaleString('id-ID', { minimumFractionDigits: 3, maximumFractionDigits: 3 }); }
 
     function sortItems(list) {
         return list.sort((a, b) => {
@@ -187,56 +255,54 @@
         const user = allAccounts.find(a => a.email.toLowerCase() === selectedEmail);
         const fCon = sortItems(allContracts.filter(c => c.userEmail.toLowerCase() === selectedEmail));
         const fOpn = allOpnames.filter(o => o.userEmail.toLowerCase() === selectedEmail);
-        const fSch = allSchedules.filter(s => s.userEmail.toLowerCase() === selectedEmail).sort((a,b) => a.periodLabel.localeCompare(b.periodLabel, undefined, {numeric:true}));
+        const fSch = allSchedules.filter(s => s.userEmail.toLowerCase() === selectedEmail)
+                                  .sort((a,b) => a.periodLabel.localeCompare(b.periodLabel, undefined, {numeric:true}));
 
-        // Hitung Progres & Nilai
         let totalFisik = 0, totalRealisasi = 0;
         fCon.forEach(c => {
             totalFisik += (c.volume * c.unitPrice);
             const itemOpnames = fOpn.filter(o => o.itemName.startsWith(c.itemCodeAndName.substring(0,10)));
             totalRealisasi += (itemOpnames.reduce((acc, cur) => acc + (cur.calculatedVolume || 0), 0) * c.unitPrice);
         });
-        const ppnRate = user?.ppnPercentage || 11.0;
-        const nilaiKontrakFull = totalFisik + (totalFisik * ppnRate / 100);
+        const ppn = user?.ppnPercentage || 11.0;
+        const nilaiFull = totalFisik + (totalFisik * ppn / 100);
 
-        // 1. Beranda
+        // Update Beranda Stats
         document.getElementById("stat-progres").innerText = totalFisik > 0 ? (totalRealisasi/totalFisik*100).toFixed(2) + " %" : "0.00 %";
         document.getElementById("stat-items").innerText = fCon.length + " Items";
-        document.getElementById("stat-nilai").innerText = formatCurrency(nilaiKontrakFull);
+        document.getElementById("stat-nilai").innerText = formatCurrency(nilaiFull);
+        
         document.getElementById("info-paket").innerHTML = `
-            <div class="col-md-6"><b>Nama Paket:</b><br>${user?.packageName || '-'}</div>
-            <div class="col-md-6 text-end"><b>Penyedia Jasa:</b><br>${user?.contractorName || '-'}</div>
-            <div class="col-md-4"><b>Tgl Kontrak:</b><br>${user?.contractDate || '-'}</div>
-            <div class="col-md-4 text-center"><b>Tgl PHO:</b><br>${user?.phoDate || '-'}</div>
-            <div class="col-md-4 text-end"><b>Panjang Penanganan:</b><br>${user?.handlingLength || '-'}</div>
+            <div class="col-md-6"><p class="text-muted small m-0">Nama Paket Pekerjaan</p><h6 class="fw-bold">${user?.packageName || '-'}</h6></div>
+            <div class="col-md-6 text-end"><p class="text-muted small m-0">Penyedia Jasa</p><h6 class="fw-bold">${user?.contractorName || '-'}</h6></div>
+            <div class="col-md-4"><p class="text-muted small m-0">Tgl Kontrak</p><h6 class="fw-bold">${user?.contractDate || '-'}</h6></div>
+            <div class="col-md-4 text-center"><p class="text-muted small m-0">Tgl PHO</p><h6 class="fw-bold text-primary">${user?.phoDate || '-'}</h6></div>
+            <div class="col-md-4 text-end"><p class="text-muted small m-0">Panjang Penanganan</p><h6 class="fw-bold">${user?.handlingLength || '-'}</h6></div>
         `;
 
-        // Rekap per Item di Beranda
-        const rekapContainer = document.getElementById("rekap-per-item");
-        rekapContainer.innerHTML = "";
+        // Rekap per Item
+        const rekap = document.getElementById("rekap-per-item"); rekap.innerHTML = "";
         fCon.forEach(c => {
-            const opnForItem = fOpn.filter(o => o.itemName.startsWith(c.itemCodeAndName.substring(0,10)));
-            const currentVol = opnForItem.reduce((a, b) => a + (b.calculatedVolume || 0), 0);
-            const pct = c.volume > 0 ? (currentVol / c.volume * 100) : 0;
-            rekapContainer.innerHTML += `
-                <div class="col-md-6"><div class="border rounded p-3">
-                    <div class="d-flex justify-content-between mb-1"><small class="fw-bold text-primary">${c.itemCodeAndName}</small><small>${formatDecimal(pct)}%</small></div>
-                    <div class="progress"><div class="progress-bar" style="width:${pct}%; background-color:var(--accent)"></div></div>
-                    <div class="d-flex justify-content-between mt-2"><small class="text-muted">Vol: ${formatDecimal(currentVol)} / ${formatDecimal(c.volume)} ${c.unit}</small></div>
+            const opn = fOpn.filter(o => o.itemName.startsWith(c.itemCodeAndName.substring(0,10)));
+            const vol = opn.reduce((a, b) => a + (b.calculatedVolume || 0), 0);
+            const pct = c.volume > 0 ? (vol / c.volume * 100) : 0;
+            rekap.innerHTML += `
+                <div class="col-md-6"><div class="border rounded-4 p-3 bg-light-subtle">
+                    <div class="d-flex justify-content-between mb-2"><span class="fw-bold small">${c.itemCodeAndName}</span><span class="badge bg-primary rounded-pill">${formatDec(pct)}%</span></div>
+                    <div class="progress mb-2"><div class="progress-bar" style="width:${pct}%; background-color:var(--accent)"></div></div>
+                    <div class="d-flex justify-content-between text-muted" style="font-size:11px;"><span>VOL: ${formatDec(vol)}</span><span>DARI: ${formatDec(c.volume)} ${c.unit}</span></div>
                 </div></div>`;
         });
 
-        // 2. Tab Kontrak
-        document.getElementById("stat-nilai-kontrak-full").innerText = formatCurrency(nilaiKontrakFull);
+        // Update Tables
         const tc = document.getElementById("table-kontrak-body"); tc.innerHTML = "";
-        fCon.forEach(c => tc.innerHTML += `<tr><td>${c.division.split(':')[0]}</td><td>${c.itemCodeAndName}</td><td class="text-center">${c.unit}</td><td class="text-end">${formatDecimal(c.volume)}</td><td class="text-end">${formatDecimal(c.unitPrice)}</td><td class="text-end">${formatDecimal(c.volume*c.unitPrice)}</td></tr>`);
+        fCon.forEach(c => tc.innerHTML += `<tr><td>${c.division.split(':')[0]}</td><td><span class="fw-bold text-primary">${c.itemCodeAndName}</span></td><td class="text-center">${c.unit}</td><td class="text-end">${formatDec(c.volume)}</td><td class="text-end">${formatDec(c.unitPrice)}</td><td class="text-end fw-bold">${formatDec(c.volume*c.unitPrice)}</td></tr>`);
 
-        // 3. Tab Opname
         const to = document.getElementById("table-opname-body"); to.innerHTML = "";
-        fOpn.sort((a,b) => b.dateString.localeCompare(a.dateString)).forEach(o => to.innerHTML += `<tr><td class="col-date">${o.dateString}</td><td>${o.roadName}</td><td>${o.location}</td><td>${o.itemName}</td><td class="text-center">${o.unit}</td><td class="text-end">${formatDecimal3(o.calculatedVolume)}</td><td class="text-center"><img src="${o.photoUri}" width="35" height="35" style="object-fit:cover; border-radius:4px; cursor:pointer" onclick="previewPhoto('${o.photoUri}')" onerror="this.src='https://placehold.co/35x35?text=Img'"></td></tr>`);
+        fOpn.sort((a,b)=>b.dateString.localeCompare(a.dateString)).forEach(o => to.innerHTML += `<tr><td class="text-muted">${o.dateString}</td><td class="fw-bold">${o.roadName}</td><td>${o.location}</td><td class="small">${o.itemName}</td><td class="text-center"><span class="badge bg-light text-dark border">${o.unit}</span></td><td class="text-end fw-bold text-success">${formatDec3(o.calculatedVolume)}</td><td class="text-center"><img src="${o.photoUri}" width="40" height="40" style="object-fit:cover; border-radius:8px; cursor:pointer" onclick="previewPhoto('${o.photoUri}')" onerror="this.src='https://placehold.co/40x40?text=Img'"></td></tr>`);
 
-        // 4. Tab Progres
-        updateChartAndTable(fSch);
+        // Update Chart & Table Progres
+        if (fSch.length > 0) updateChartAndTable(fSch);
     }
 
     function updateChartAndTable(data) {
@@ -247,25 +313,36 @@
             data: {
                 labels: data.map(d => d.periodLabel),
                 datasets: [
-                    { label: 'Renc Fisik', data: data.map(d => d.rencFisik), borderColor: 'red', tension: 0.3 },
-                    { label: 'Real Fisik', data: data.map(d => d.realFisik), borderColor: 'blue', tension: 0.3 },
-                    { label: 'Real Keu', data: data.map(d => d.realKeu), borderColor: 'green', tension: 0.3 }
+                    { label: 'Renc Fisik', data: data.map(d => d.rencFisik), borderColor: '#EF4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', fill: true, tension: 0.4 },
+                    { label: 'Real Fisik', data: data.map(d => d.realFisik), borderColor: '#0D5DA3', tension: 0.4 },
+                    { label: 'Real Keu', data: data.map(d => d.realKeu), borderColor: '#10B981', tension: 0.4 }
                 ]
             },
-            options: { scales: { y: { min: 0, max: 100 } } }
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, max: 100 } } }
         });
 
-        // Tabel Progres
-        let html = `<table class="table table-bordered table-sm text-center align-middle mt-3"><thead><tr class="table-light"><th>Minggu</th>`;
-        data.forEach(d => html += `<th>${d.periodLabel}</th>`);
-        html += `</tr></thead><tbody><tr><td>Renc Fisik (%)</td>`;
-        data.forEach(d => html += `<td>${d.rencFisik > 0 ? formatDecimal(d.rencFisik) : ''}</td>`);
-        html += `</tr><tr><td>Real Fisik (%)</td>`;
-        data.forEach(d => html += `<td>${d.realFisik > 0 ? formatDecimal(d.realFisik) : ''}</td>`);
-        html += `</tr><tr><td>Real Keu (%)</td>`;
-        data.forEach(d => html += `<td>${d.realKeu > 0 ? formatDecimal(d.realKeu) : ''}</td>`);
+        let html = `<table class="table table-custom table-bordered text-center align-middle m-0"><thead class="table-light"><tr><th>Minggu</th>`;
+        data.forEach(d => html += `<th style="min-width:80px">${d.periodLabel}</th>`);
+        html += `</tr></thead><tbody><tr><td class="fw-bold text-start ps-3">Rencana (%)</td>`;
+        data.forEach(d => html += `<td>${d.rencFisik > 0 ? formatDec(d.rencFisik) : '-'}</td>`);
+        html += `</tr><tr><td class="fw-bold text-start ps-3">Real Fisik (%)</td>`;
+        data.forEach(d => html += `<td>${d.realFisik > 0 ? formatDec(d.realFisik) : '-'}</td>`);
+        html += `</tr><tr><td class="fw-bold text-start ps-3">Real Keu (%)</td>`;
+        data.forEach(d => html += `<td>${d.realKeu > 0 ? formatDec(d.realKeu) : '-'}</td>`);
         html += `</tr></tbody></table>`;
         document.getElementById("table-progres-container").innerHTML = html;
+    }
+
+    function adminLogin() {
+        const p = prompt("Password Super Admin:");
+        if(p === 'eProject@2026') { localStorage.setItem('isSuperAdmin', 'true'); location.reload(); }
+    }
+
+    function showTab(t) {
+        document.querySelectorAll('.tab-pane, .nav-link').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-'+t).classList.add('active');
+        document.getElementById('btn-'+t).classList.add('active');
+        document.getElementById('tab-title').innerText = document.getElementById('btn-'+t).innerText.trim();
     }
 
     function filterOpnameTable() {
@@ -275,21 +352,11 @@
         });
     }
 
-    function showTab(t) {
-        document.querySelectorAll('.tab-pane, .nav-link').forEach(el => el.classList.remove('active'));
-        document.getElementById('tab-'+t).classList.add('active');
-        document.getElementById('btn-'+t).classList.add('active');
-        const titles = { beranda: "Beranda", kontrak: "Data Kontrak", opname: "Data Opname", progres: "Progres Pelaksanaan", users: "Kelola User" };
-        document.getElementById('tab-title').innerText = titles[t];
-    }
-
-    function adminLogin() {
-        const p = prompt("Password Super Admin:");
-        if(p === 'eProject@2026') { localStorage.setItem('isSuperAdmin', 'true'); location.reload(); }
-    }
-
     function previewPhoto(u) { document.getElementById("modalImg").src = u; document.getElementById("photoModal").style.display = "flex"; }
-    function renderUserList() { /* Render list for super admin if needed */ }
+    function renderUserList() {
+        const b = document.getElementById("user-list-body"); b.innerHTML = "";
+        allAccounts.forEach(a => b.innerHTML += `<tr><td>${a.email}</td><td>${a.packageName || '-'}</td><td><span class="badge ${a.isApproved?'bg-success':'bg-warning'}">${a.isApproved?'Aktif':'Pending'}</span></td></tr>`);
+    }
 
     init();
 </script>
