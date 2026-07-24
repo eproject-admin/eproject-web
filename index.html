@@ -5,35 +5,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard eProject - Realtime</title>
     
-    <!-- Memanggil Firebase SDK -->
+    <!-- Memanggil Firebase SDK (Compatibility Version) -->
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-firestore-compat.js"></script>
 
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #f0f2f5; color: #333; }
-        .header { background-color: #0D5DA3; color: white; padding: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .container { padding: 20px; max-width: 1000px; margin: auto; }
-        .card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid #0D5DA3; display: flex; justify-content: space-between; align-items: center; }
-        .info h3 { margin: 0 0 5px 0; color: #0D5DA3; }
-        .info p { margin: 2px 0; font-size: 14px; color: #666; }
-        .volume { text-align: right; }
-        .vol-value { font-size: 20px; font-weight: bold; color: #2E7D32; }
-        .status-online { color: #4CAF50; font-size: 12px; font-weight: bold; }
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; background-color: #f4f7f9; color: #333; }
+        .header { background-color: #0D5DA3; color: white; padding: 25px 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header h1 { margin: 0; font-size: 24px; }
+        .status-bar { background: #fff; padding: 10px; text-align: center; font-size: 13px; border-bottom: 1px solid #ddd; }
+        .container { padding: 20px; max-width: 900px; margin: auto; }
+        
+        /* Gaya Card Data */
+        .card { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 15px; 
+            margin-bottom: 20px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+            border-left: 6px solid #0D5DA3; 
+            display: flex; 
+            flex-wrap: wrap;
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        .info { flex: 1; min-width: 250px; }
+        .info h3 { margin: 0 0 10px 0; color: #0D5DA3; font-size: 18px; line-height: 1.4; }
+        .info p { margin: 4px 0; font-size: 14px; color: #555; }
+        .info b { color: #333; }
+
+        .volume-box { 
+            text-align: right; 
+            background: #e8f0fe; 
+            padding: 15px; 
+            border-radius: 12px; 
+            min-width: 120px;
+        }
+        .volume-box p { margin: 0; font-size: 12px; color: #0D5DA3; font-weight: bold; text-transform: uppercase; }
+        .vol-value { font-size: 24px; font-weight: bold; color: #2E7D32; }
+        
+        .loading { text-align: center; padding: 50px; color: #666; }
+        
+        /* Responsive untuk HP */
+        @media (max-width: 600px) {
+            .card { flex-direction: column; align-items: flex-start; }
+            .volume-box { width: 100%; text-align: center; margin-top: 15px; box-sizing: border-box; }
+        }
     </style>
 </head>
 <body>
 
 <div class="header">
     <h1>Dashboard Opname eProject</h1>
-    <p id="sync-status">Menghubungkan ke database...</p>
+</div>
+
+<div class="status-bar" id="sync-status">
+    ⏳ Menghubungkan ke database Firebase...
 </div>
 
 <div class="container" id="data-list">
-    <!-- Data dari lapangan akan muncul di sini secara otomatis -->
+    <div class="loading">Memuat data dari lapangan...</div>
 </div>
 
 <script>
-    // === GANTI KODE DI BAWAH INI DENGAN firebaseConfig ANDA (DARI LANGKAH 2) ===
+    // === KONFIGURASI FIREBASE (SESUAIKAN DENGAN PROJECT SETTINGS ANDA) ===
     const firebaseConfig = {
         apiKey: "AIzaSyBI1K_EpPPGTPeXlcZJhKzEYwn3QFa59II",
         authDomain: "eproject-db4a6.firebaseapp.com",
@@ -42,49 +77,62 @@
         messagingSenderId: "497280440732",
         appId: "1:497280440732:web:295bf5dd17515ff1349059"
     };
-    // =========================================================================
+    // ====================================================================
 
     // Inisialisasi Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Fungsi untuk mengambil data secara Realtime
-    firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const listContainer = document.getElementById("data-list");
+    // Fungsi Mengambil Data Secara Realtime
+    // Catatan: orderBy dihapus sementara agar tidak perlu membuat Index di awal
+    db.collection("opnames").onSnapshot((snapshot) => {
+        const listContainer = document.getElementById("data-list");
+        const statusText = document.getElementById("sync-status");
+        
+        listContainer.innerHTML = ""; 
+        statusText.innerHTML = "● Terhubung ke Cloud Firestore (Realtime)";
+        statusText.style.color = "#2E7D32";
 
-// Ambil data tanpa orderBy dulu (untuk menghindari error Index)
-db.collection("opnames").onSnapshot((snapshot) => {
-    const statusText = document.getElementById("sync-status");
-    listContainer.innerHTML = ""; 
-    statusText.innerHTML = "● Terhubung ke Project: eproject-db4a6";
-    statusText.style.color = "#4CAF50";
+        if (snapshot.empty) {
+            listContainer.innerHTML = `
+                <div style="text-align:center; padding:50px;">
+                    <p>Database Terhubung.</p>
+                    <p style="color:#666">Belum ada data di koleksi '<b>opnames</b>'.<br>Silakan input data dari aplikasi Android Anda.</p>
+                </div>`;
+            return;
+        }
 
-    if (snapshot.empty) {
-        listContainer.innerHTML = "<p style='text-align:center'>Koneksi sukses, tapi koleksi 'opnames' kosong.</p>";
-        return;
-    }
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            
+            // Format angka volume 3 desimal
+            const volume = data.calculatedVolume ? parseFloat(data.calculatedVolume).toFixed(3) : "0.000";
 
-    snapshot.forEach((doc) => {
-        const data = doc.data();
-        // Sesuai field di screenshot Anda: itemName, roadName, location, calculatedVolume
-        const card = `
-            <div class="card">
-                <div class="info">
-                    <h3>${data.itemName || 'Tanpa Nama Item'}</h3>
-                    <p><b>Ruas:</b> ${data.roadName || '-'}</p>
-                    <p><b>Lokasi:</b> ${data.location || '-'}</p>
-                    <p><b>Sisi:</b> ${data.side || '-'}</p>
+            const cardHtml = `
+                <div class="card">
+                    <div class="info">
+                        <h3>${data.itemName || 'Tanpa Nama Item'}</h3>
+                        <p><b>Ruas:</b> ${data.roadName || '-'}</p>
+                        <p><b>Lokasi:</b> ${data.location || '-'}</p>
+                        <p><b>Sisi:</b> ${data.side || '-'}</p>
+                        <p><b>Tanggal:</b> ${data.dateString || '-'}</p>
+                    </div>
+                    <div class="volume-box">
+                        <p>Volume Total</p>
+                        <span class="vol-value">${volume}</span>
+                        <span style="font-size:14px; font-weight:bold;">${data.unit || ''}</span>
+                    </div>
                 </div>
-                <div class="volume">
-                    <p>Volume</p>
-                    <span class="vol-value">${data.calculatedVolume ? data.calculatedVolume.toFixed(3) : '0.000'}</span>
-                </div>
-            </div>
-        `;
-        listContainer.innerHTML += card;
+            `;
+            listContainer.innerHTML += cardHtml;
+        });
+    }, (error) => {
+        console.error("Error: ", error);
+        const statusText = document.getElementById("sync-status");
+        statusText.innerHTML = "❌ Gagal Terhubung: " + error.message;
+        statusText.style.color = "red";
     });
-}, (error) => {
-    document.getElementById("sync-status").innerHTML = "Error: " + error.message;
-    document.getElementById("sync-status").style.color = "red";
-});
+</script>
+
+</body>
+</html>
