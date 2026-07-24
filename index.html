@@ -17,14 +17,14 @@
         .sidebar { background: white; height: 100vh; position: fixed; border-right: 1px solid #e0e0e0; padding-top: 20px; z-index: 1000; width: 240px; }
         .nav-link { color: #64748B; padding: 12px 20px; font-weight: 600; border-radius: 8px; margin: 5px 15px; cursor: pointer; border:none; background:none; width: 210px; text-align: left; display: block;}
         .nav-link.active { background-color: var(--accent); color: white !important; }
-        .main-content { margin-left: 240px; padding: 30px; position: relative; z-index: 1; }
+        .main-content { margin-left: 240px; padding: 30px; }
         .card-custom { background: white; border-radius: 16px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; padding: 20px; }
-        .stat-value { font-size: 24px; font-weight: 700; color: var(--accent); }
+        .stat-value { font-size: 28px; font-weight: 700; color: var(--accent); }
         .tab-pane { display: none; }
         .tab-pane.active { display: block; }
+        #admin-menu { display: none; } /* Tersembunyi untuk selain Super Admin */
         #photoModal { display: none; position: fixed; z-index: 2000; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; }
         #photoModal img { max-width: 90%; max-height: 90%; border-radius: 10px; }
-        @media (max-width: 768px) { .sidebar { height: auto; width: 100%; position: relative; } .main-content { margin-left: 0; } .nav-link { width: 90%; } }
     </style>
 </head>
 <body>
@@ -34,70 +34,96 @@
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar -->
-        <div class="col-md-2 sidebar">
+        <div class="col-md-2 sidebar d-flex flex-column">
             <div class="px-4 mb-4 text-center">
                 <h4 class="fw-bold" style="color:var(--accent)">eProject</h4>
-                <small class="text-muted">Admin Dashboard</small>
+                <small class="text-muted">Monitoring System</small>
             </div>
-            <div class="nav flex-column">
+            <div class="nav flex-column flex-grow-1">
                 <button id="btn-beranda" class="nav-link active" onclick="showTab('beranda')">🏠 Beranda</button>
                 <button id="btn-kontrak" class="nav-link" onclick="showTab('kontrak')">📑 Kontrak</button>
                 <button id="btn-opname" class="nav-link" onclick="showTab('opname')">📊 Opname</button>
                 <button id="btn-progres" class="nav-link" onclick="showTab('progres')">📈 Progres</button>
-                <button id="btn-users" class="nav-link" onclick="showTab('users')">👥 Kelola User</button>
+                <div id="admin-menu">
+                    <hr>
+                    <button id="btn-users" class="nav-link text-danger" onclick="showTab('users')">⚙️ Kelola User</button>
+                </div>
+            </div>
+            <div class="p-3">
+                <button class="btn btn-sm btn-light w-100" onclick="adminLogin()">🔓 Login Super Admin</button>
             </div>
         </div>
 
         <!-- Main Content -->
         <div class="col-md-10 main-content">
-            <!-- Search Bar -->
             <div class="card-custom mb-4">
                 <div class="row align-items-center">
                     <div class="col-md-6">
                         <h2 id="tab-title" class="fw-bold mb-0">Beranda</h2>
-                        <p class="text-muted mb-0">Cari email user untuk melihat laporan.</p>
+                        <p id="tab-subtitle" class="text-muted mb-0">Silakan masukkan email user untuk memuat data.</p>
                     </div>
                     <div class="col-md-6">
                         <div class="input-group">
-                            <input type="email" id="userEmailInput" class="form-control" placeholder="Ketik Email User..." list="emailSuggestions">
+                            <input type="email" id="userEmailInput" class="form-control" placeholder="Cari Email User (e.g. user@gmail.com)" list="emailSuggestions">
                             <datalist id="emailSuggestions"></datalist>
-                            <button class="btn btn-primary" style="background:var(--accent)" onclick="searchUser()">Cari Data</button>
+                            <button class="btn btn-primary" style="background:var(--accent)" onclick="searchUser()">Tampilkan Data</button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Tab 1: Beranda -->
+            <!-- Tab Beranda -->
             <div id="tab-beranda" class="tab-pane active">
-                <div class="row text-center">
-                    <div class="col-md-6"><div class="card-custom"><div class="text-muted small fw-bold">PROGRES FISIK</div><div id="stat-progres" class="stat-value">0.00 %</div></div></div>
-                    <div class="col-md-6"><div class="card-custom"><div class="text-muted small fw-bold">ITEM PEKERJAAN</div><div id="stat-items" class="stat-value">0 Items</div></div></div>
+                <div class="row g-4">
+                    <div class="col-md-6"><div class="card-custom text-center"><div class="text-muted small fw-bold">PROGRES FISIK AGREGAT</div><div id="stat-progres" class="stat-value">0.00 %</div></div></div>
+                    <div class="col-md-6"><div class="card-custom text-center"><div class="text-muted small fw-bold">ITEM PEKERJAAN</div><div id="stat-items" class="stat-value">0 Items</div></div></div>
                 </div>
-                <div class="card-custom mt-2">
-                    <h5 class="fw-bold mb-3">Informasi Paket Pekerjaan</h5>
-                    <div id="info-paket" class="row g-3"><div class="text-center text-muted">Gunakan kotak pencarian di atas.</div></div>
+                <div class="card-custom mt-4">
+                    <h5 class="fw-bold mb-3">Informasi Detail Paket</h5>
+                    <div id="info-paket" class="row g-3">
+                        <div class="col-12 text-center py-4 text-muted">Belum ada profil paket yang dimuat.</div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Tab: Kontrak, Opname, Progres (Isinya tetap seperti sebelumnya) -->
-            <div id="tab-kontrak" class="tab-pane"><div class="card-custom"><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Divisi</th><th>Item</th><th class="text-center">Satuan</th><th class="text-end">Volume</th><th class="text-end">Harga</th><th class="text-end">Total</th></tr></thead><tbody id="table-kontrak-body"></tbody></table></div></div></div>
-            <div id="tab-opname" class="tab-pane"><div class="card-custom mb-3"><input type="text" id="searchOpname" class="form-control" placeholder="Cari di tabel..." onkeyup="filterOpnameTable()"></div><div class="card-custom"><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Tanggal</th><th>Ruas</th><th>Lokasi</th><th>Item</th><th class="text-center">Satuan</th><th class="text-end">Volume</th><th class="text-center">Foto</th></tr></thead><tbody id="table-opname-body"></tbody></table></div></div></div>
-            <div id="tab-progres" class="tab-pane"><div class="card-custom"><h5 class="fw-bold">Kurva S</h5><canvas id="kurvaS" height="100"></canvas></div></div>
+            <!-- Tab Kontrak -->
+            <div id="tab-kontrak" class="tab-pane">
+                <div class="card-custom">
+                    <div class="table-responsive"><table class="table align-middle">
+                        <thead class="table-light"><tr><th>Divisi</th><th>Item Pekerjaan</th><th class="text-center">Satuan</th><th class="text-end">Volume</th><th class="text-end">Harga Satuan</th><th class="text-end">Total Harga</th></tr></thead>
+                        <tbody id="table-kontrak-body"></tbody>
+                    </table></div>
+                </div>
+            </div>
 
-            <!-- Tab Baru: Kelola User (Untuk INPUT User) -->
+            <!-- Tab Opname -->
+            <div id="tab-opname" class="tab-pane">
+                <div class="card-custom mb-3"><input type="text" id="searchOpname" class="form-control" placeholder="Cari data opname..." onkeyup="filterOpnameTable()"></div>
+                <div class="card-custom">
+                    <div class="table-responsive"><table class="table align-middle">
+                        <thead class="table-light"><tr><th>Tanggal</th><th>Ruas</th><th>Lokasi</th><th>Item Pekerjaan</th><th class="text-center">Satuan</th><th class="text-end">Volume</th><th class="text-center">Foto</th></tr></thead>
+                        <tbody id="table-opname-body"></tbody>
+                    </table></div>
+                </div>
+            </div>
+
+            <!-- Tab Progres -->
+            <div id="tab-progres" class="tab-pane">
+                <div class="card-custom"><h5 class="fw-bold mb-4">Grafik Kurva S (Fisik & Keuangan)</h5><canvas id="kurvaS" height="120"></canvas></div>
+            </div>
+
+            <!-- Tab Kelola User (Super Admin Only) -->
             <div id="tab-users" class="tab-pane">
                 <div class="card-custom">
-                    <h5 class="fw-bold mb-3">Input / Tambah User Baru</h5>
-                    <div class="row g-3">
-                        <div class="col-md-4"><input id="newEmail" class="form-control" placeholder="Email User"></div>
-                        <div class="col-md-4"><input id="newPackage" class="form-control" placeholder="Nama Paket"></div>
-                        <div class="col-md-2"><select id="newRole" class="form-select"><option value="user">User</option><option value="admin">Admin</option></select></div>
-                        <div class="col-md-2"><button class="btn btn-success w-100" onclick="addUser()">+ Tambah</button></div>
+                    <h5>Tambah User Baru</h5>
+                    <div class="row g-2">
+                        <div class="col-md-5"><input id="newEmail" class="form-control" placeholder="Email"></div>
+                        <div class="col-md-5"><input id="newPackage" class="form-control" placeholder="Nama Paket"></div>
+                        <div class="col-md-2"><button class="btn btn-success w-100" onclick="addUser()">Simpan</button></div>
                     </div>
                 </div>
                 <div class="card-custom">
-                    <h5 class="fw-bold mb-3">Daftar User Terdaftar</h5>
-                    <div class="table-responsive"><table class="table"><thead><tr><th>Email</th><th>Paket</th><th>Role</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="user-list-body"></tbody></table></div>
+                    <table class="table"><thead><tr><th>Email</th><th>Paket</th><th>Role</th><th>Status</th></tr></thead><tbody id="user-list-body"></tbody></table>
                 </div>
             </div>
         </div>
@@ -105,6 +131,7 @@
 </div>
 
 <script>
+    // === CONFIG FIREBASE ===
     const firebaseConfig = {
         apiKey: "AIzaSyBI1K_EpPPGTPeXlcZJhKzEYwn3QFa59II",
         authDomain: "eproject-db4a6.firebaseapp.com",
@@ -116,19 +143,32 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+
     let allAccounts = [], allContracts = [], allOpnames = [], allSchedules = [], chartInstance = null, selectedEmail = "";
 
     function init() {
+        // Cek Login Admin dari browser
+        if(localStorage.getItem('isSuperAdmin') === 'true') document.getElementById('admin-menu').style.display = 'block';
+
         db.collection("accounts").onSnapshot(snap => {
             allAccounts = snap.docs.map(doc => doc.data());
-            renderUserList();
             const dl = document.getElementById("emailSuggestions");
             dl.innerHTML = "";
-            allAccounts.forEach(a => dl.innerHTML += `<option value="${a.email}">`);
+            allAccounts.forEach(a => dl.innerHTML += `<option value="${a.email}">${a.packageName || ''}</option>`);
+            renderUserList();
         });
         db.collection("contracts").onSnapshot(snap => { allContracts = snap.docs.map(doc => doc.data()); updateUI(); });
         db.collection("opnames").onSnapshot(snap => { allOpnames = snap.docs.map(doc => doc.data()); updateUI(); });
         db.collection("schedules").onSnapshot(snap => { allSchedules = snap.docs.map(doc => doc.data()); updateUI(); });
+    }
+
+    function adminLogin() {
+        const pass = prompt("Masukkan Password Super Admin:");
+        if(pass === 'eProject@2026') {
+            localStorage.setItem('isSuperAdmin', 'true');
+            document.getElementById('admin-menu').style.display = 'block';
+            alert("Login Berhasil!");
+        } else { alert("Password Salah!"); }
     }
 
     function showTab(t) {
@@ -140,37 +180,8 @@
 
     function searchUser() {
         selectedEmail = document.getElementById("userEmailInput").value.trim().toLowerCase();
+        if(!selectedEmail) return alert("Ketik email user!");
         updateUI();
-    }
-
-    // FUNGSI INPUT USER BARU
-    async function addUser() {
-        const email = document.getElementById("newEmail").value.trim().toLowerCase();
-        const pkg = document.getElementById("newPackage").value.trim();
-        const role = document.getElementById("newRole").value;
-        if(!email || !pkg) return alert("Isi email dan paket!");
-        
-        await db.collection("accounts").document(email).set({
-            email: email, packageName: pkg, role: role, isApproved: true, passwordHash: "123456"
-        });
-        alert("User berhasil diinput!");
-        document.getElementById("newEmail").value = ""; document.getElementById("newPackage").value = "";
-    }
-
-    async function toggleApprove(email, status) {
-        await db.collection("accounts").document(email).update({ isApproved: !status });
-    }
-
-    function renderUserList() {
-        const body = document.getElementById("user-list-body");
-        body.innerHTML = "";
-        allAccounts.forEach(a => {
-            body.innerHTML += `<tr>
-                <td>${a.email}</td><td>${a.packageName || '-'}</td><td>${a.role}</td>
-                <td>${a.isApproved ? '<span class="badge bg-success">Aktif</span>' : '<span class="badge bg-warning">Pending</span>'}</td>
-                <td><button class="btn btn-sm btn-outline-primary" onclick="toggleApprove('${a.email}', ${a.isApproved})">Ubah Status</button></td>
-            </tr>`;
-        });
     }
 
     function updateUI() {
@@ -178,21 +189,56 @@
         const user = allAccounts.find(a => a.email.toLowerCase() === selectedEmail);
         const fCon = allContracts.filter(c => c.userEmail.toLowerCase() === selectedEmail);
         const fOpn = allOpnames.filter(o => o.userEmail.toLowerCase() === selectedEmail);
-        
+        const fSch = allSchedules.filter(s => s.userEmail.toLowerCase() === selectedEmail);
+
+        // Beranda Stats
+        let totalFisik = 0, totalRealisasi = 0;
+        fCon.forEach(c => {
+            totalFisik += (c.volume * c.unitPrice);
+            const opnForItem = fOpn.filter(o => o.itemName.startsWith(c.itemCodeAndName.substring(0,10)));
+            totalRealisasi += (opnForItem.reduce((a, b) => a + (b.calculatedVolume || 0), 0) * c.unitPrice);
+        });
+        document.getElementById("stat-progres").innerText = totalFisik > 0 ? (totalRealisasi/totalFisik*100).toFixed(2) + " %" : "0.00 %";
         document.getElementById("stat-items").innerText = [...new Set(fOpn.map(o => o.itemName))].length + " Items";
-        document.getElementById("info-paket").innerHTML = `
-            <div class="col-md-6"><b>Nama Paket:</b> ${user?.packageName || '-'}</div>
-            <div class="col-md-6 text-end"><b>Panjang:</b> ${user?.handlingLength || '-'}</div>
-        `;
         
+        document.getElementById("info-paket").innerHTML = `
+            <div class="col-md-6"><b>Nama Paket:</b><br>${user?.packageName || '-'}</div>
+            <div class="col-md-6 text-end"><b>Penyedia Jasa:</b><br>${user?.contractorName || '-'}</div>
+            <div class="col-md-4"><b>Tgl Kontrak:</b><br>${user?.contractDate || '-'}</div>
+            <div class="col-md-4 text-center"><b>Tgl PHO:</b><br>${user?.phoDate || '-'}</div>
+            <div class="col-md-4 text-end"><b>Panjang Penanganan:</b><br>${user?.handlingLength || '-'}</div>
+        `;
+
+        // Tables
         const tc = document.getElementById("table-kontrak-body"); tc.innerHTML = "";
         fCon.forEach(c => tc.innerHTML += `<tr><td>${c.division.split(':')[0]}</td><td>${c.itemCodeAndName}</td><td class="text-center">${c.unit}</td><td class="text-end">${c.volume}</td><td class="text-end">${c.unitPrice.toLocaleString()}</td><td class="text-end">${(c.volume*c.unitPrice).toLocaleString()}</td></tr>`);
         
         const to = document.getElementById("table-opname-body"); to.innerHTML = "";
-        fOpn.forEach(o => to.innerHTML += `<tr><td>${o.dateString}</td><td>${o.roadName}</td><td>${o.location}</td><td>${o.itemName}</td><td class="text-center">${o.unit}</td><td class="text-end">${o.calculatedVolume.toFixed(3)}</td><td class="text-center"><img src="${o.photoUri}" width="30" onclick="previewPhoto('${o.photoUri}')" style="cursor:pointer"></td></tr>`);
+        fOpn.sort((a,b) => b.dateString.localeCompare(a.dateString)).forEach(o => to.innerHTML += `<tr><td>${o.dateString}</td><td>${o.roadName}</td><td>${o.location}</td><td>${o.itemName}</td><td class="text-center">${o.unit}</td><td class="text-end">${o.calculatedVolume.toFixed(3)}</td><td class="text-center"><img src="${o.photoUri}" width="35" height="35" style="object-fit:cover; border-radius:4px; cursor:pointer" onclick="previewPhoto('${o.photoUri}')" onerror="this.src='https://placehold.co/35x35?text=Img'"></td></tr>`);
+
+        updateChart(fSch);
+    }
+
+    function updateChart(data) {
+        if (chartInstance) chartInstance.destroy();
+        data.sort((a,b) => a.periodLabel.localeCompare(b.periodLabel, undefined, {numeric:true}));
+        const ctx = document.getElementById('kurvaS').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.map(d => d.periodLabel),
+                datasets: [
+                    { label: 'Renc Fisik', data: data.map(d => d.rencFisik), borderColor: 'red', tension: 0.3 },
+                    { label: 'Real Fisik', data: data.map(d => d.realFisik), borderColor: 'blue', tension: 0.3 },
+                    { label: 'Real Keu', data: data.map(d => d.realKeu), borderColor: 'green', tension: 0.3 }
+                ]
+            }
+        });
     }
 
     function previewPhoto(u) { document.getElementById("modalImg").src = u; document.getElementById("photoModal").style.display = "flex"; }
+    async function addUser() { /* Fungsi sama seperti sebelumnya */ }
+    function renderUserList() { /* Fungsi sama seperti sebelumnya */ }
 
     init();
 </script>
