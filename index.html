@@ -17,15 +17,16 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: #1E293B; overflow-x: hidden; }
         .sidebar { background: white; height: 100vh; position: fixed; width: var(--sidebar-w); border-right: 1px solid #E2E8F0; padding: 25px 15px; z-index: 1000; }
         .logo-box { padding: 0 15px 30px; border-bottom: 1px solid #F1F5F9; margin-bottom: 20px; }
-        .nav-link { color: #64748B; padding: 12px 18px; font-weight: 600; border-radius: 12px; margin-bottom: 8px; cursor: pointer; border: none; background: transparent; width: 100%; text-align: left; display: flex; align-items: center; gap: 12px; }
+        .nav-link { color: #64748B; padding: 12px 18px; font-weight: 600; border-radius: 12px; margin-bottom: 8px; cursor: pointer; border: none; background: transparent; width: 100%; text-align: left; display: flex; align-items: center; gap: 12px; transition: 0.2s; }
         .nav-link.active { background: var(--accent); color: white !important; box-shadow: 0 4px 12px rgba(13, 93, 163, 0.2); }
         .main-content { margin-left: var(--sidebar-w); padding: 40px; min-height: 100vh; }
         .glass-card { background: white; border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.04); padding: 25px; margin-bottom: 25px; }
         .stat-value { font-size: 28px; font-weight: 700; color: var(--accent); }
-        .tab-pane { display: none; }
+        .tab-pane { display: none; animation: fadeIn 0.4s ease; }
         .tab-pane.active { display: block; }
         #photoModal { display: none; position: fixed; z-index: 2000; top:0; left:0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.9); align-items: center; justify-content: center; backdrop-filter: blur(5px); }
         #photoModal img { max-width: 85%; max-height: 85%; border-radius: 20px; border: 5px solid white; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -33,13 +34,17 @@
 <div id="photoModal" onclick="this.style.display='none'"><img id="modalImg" src=""></div>
 
 <div class="sidebar">
-    <div class="logo-box"><h4 class="fw-bold m-0" style="color:var(--accent)">eProject</h4><small class="text-muted">Cloud Monitoring</small></div>
+    <div class="logo-box"><h4 class="fw-bold m-0" style="color:var(--accent)">eProject</h4><small class="text-muted">BPJN Kaltara</small></div>
     <nav class="nav flex-column">
         <button id="btn-beranda" class="nav-link active" onclick="showTab('beranda')"><i class="fa-solid fa-house"></i><span>Beranda</span></button>
         <button id="btn-kontrak" class="nav-link" onclick="showTab('kontrak')"><i class="fa-solid fa-file-contract"></i><span>Data Kontrak</span></button>
         <button id="btn-opname" class="nav-link" onclick="showTab('opname')"><i class="fa-solid fa-chart-simple"></i><span>Data Opname</span></button>
         <button id="btn-progres" class="nav-link" onclick="showTab('progres')"><i class="fa-solid fa-chart-line"></i><span>Progres</span></button>
+        <div id="admin-menu" style="display:none;"><hr><button id="btn-users" class="nav-link text-danger" onclick="showTab('users')"><i class="fa-solid fa-users-gear"></i><span>Kelola User</span></button></div>
     </nav>
+    <div style="position: absolute; bottom: 20px; width: 85%; text-align: center;">
+        <button class="btn btn-sm text-muted" onclick="adminLogin()">🔓 Super Admin</button>
+    </div>
 </div>
 
 <div class="main-content">
@@ -60,17 +65,14 @@
             <div class="col-md-4"><div class="glass-card text-center"><div class="text-muted small fw-bold">ITEM TERINPUT</div><div id="stat-items" class="stat-value">0 Items</div></div></div>
             <div class="col-md-4"><div class="glass-card text-center"><div class="text-muted small fw-bold">TOTAL NILAI</div><div id="stat-nilai" class="stat-value" style="font-size: 20px;">Rp 0,00</div></div></div>
         </div>
-        <div class="glass-card mt-4">
-            <h6 class="fw-bold mb-4"><i class="fa-solid fa-circle-info me-2 text-primary"></i>Detail Informasi Paket</h6>
-            <div id="info-paket" class="row g-4"></div>
-        </div>
+        <div class="glass-card mt-4"><h6 class="fw-bold mb-4">Informasi Paket</h6><div id="info-paket" class="row g-4"></div></div>
         <div class="glass-card mt-4"><h6 class="fw-bold mb-4">Rekapitulasi Progres per Item</h6><div id="rekap-per-item" class="row g-4"></div></div>
     </div>
 
-    <!-- Other tabs (Kontrak, Opname, Progres) remain identical to previous functional versions -->
     <div id="tab-kontrak" class="tab-pane"><div class="glass-card px-0"><div class="table-responsive"><table class="table align-middle m-0"><thead><tr><th>Divisi</th><th>Item</th><th class="text-center">Satuan</th><th class="text-end">Volume</th><th class="text-end">Harga</th><th class="text-end">Total</th></tr></thead><tbody id="table-kontrak-body"></tbody></table></div></div></div>
     <div id="tab-opname" class="tab-pane"><div class="glass-card mb-3"><input type="text" id="searchOpname" class="form-control rounded-pill px-4" placeholder="Cari di tabel..." onkeyup="filterOpnameTable()"></div><div class="glass-card px-0"><div class="table-responsive"><table class="table align-middle m-0"><thead><tr><th>Tanggal</th><th>Ruas</th><th>Lokasi</th><th>Item</th><th class="text-center">Satuan</th><th class="text-end">Volume</th><th class="text-center">Foto</th></tr></thead><tbody id="table-opname-body"></tbody></table></div></div></div>
-    <div id="tab-progres" class="tab-pane"><div class="glass-card mb-4"><h6>Kurva S Progres</h6><canvas id="kurvaS" height="100"></canvas></div><div class="glass-card px-0"><div id="table-progres-container" class="table-responsive"></div></div></div>
+    <div id="tab-progres" class="tab-pane"><div class="glass-card mb-4"><h6>Kurva S Progres Pelaksanaan</h6><canvas id="kurvaS" height="100"></canvas></div><div class="glass-card px-0"><div id="table-progres-container" class="table-responsive text-center"></div></div></div>
+    <div id="tab-users" class="tab-pane"><div class="glass-card"><h6>Tambah User</h6><div class="row g-2"><div class="col-md-5"><input id="newEmail" class="form-control" placeholder="Email"></div><div class="col-md-5"><input id="newPackage" class="form-control" placeholder="Paket"></div><div class="col-md-2"><button class="btn btn-success w-100" onclick="addUser()">Simpan</button></div></div></div><div class="glass-card px-0"><table class="table"><thead><tr><th>Email</th><th>Paket</th><th>Aksi</th></tr></thead><tbody id="user-list-body"></tbody></table></div></div>
 </div>
 
 <script>
@@ -89,10 +91,12 @@
     let allAccounts = [], allContracts = [], allOpnames = [], allSchedules = [], chartInstance = null, selectedEmail = "";
 
     function init() {
+        if(localStorage.getItem('isSuperAdmin') === 'true') document.getElementById('admin-menu').style.display = 'block';
         db.collection("accounts").onSnapshot(s => { 
             allAccounts = s.docs.map(d => d.data()); 
-            const dl = document.getElementById("emailSuggestions");
-            dl.innerHTML = ""; allAccounts.forEach(a => dl.innerHTML += `<option value="${a.email}">`);
+            const dl = document.getElementById("emailSuggestions"); dl.innerHTML = ""; 
+            allAccounts.forEach(a => dl.innerHTML += `<option value="${a.email}">`);
+            renderUserList();
         });
         db.collection("contracts").onSnapshot(s => { allContracts = s.docs.map(d => d.data()); updateUI(); });
         db.collection("opnames").onSnapshot(s => { allOpnames = s.docs.map(d => d.data()); updateUI(); });
@@ -101,30 +105,83 @@
 
     function searchUser() { selectedEmail = document.getElementById("userEmailInput").value.trim().toLowerCase(); updateUI(); }
 
+    function formatCurrency(v) { return "Rp " + v.toLocaleString('id-ID', { minimumFractionDigits: 2 }); }
+    function formatDec(v) { return v.toLocaleString('id-ID', { minimumFractionDigits: 2 }); }
+
     function updateUI() {
         if (!selectedEmail) return;
         const user = allAccounts.find(a => a.email.toLowerCase() === selectedEmail);
-        const fCon = allContracts.filter(c => c.userEmail.toLowerCase() === selectedEmail);
+        const fCon = allContracts.filter(c => c.userEmail.toLowerCase() === selectedEmail).sort((a,b) => a.division.localeCompare(b.division, undefined, {numeric:true}));
         const fOpn = allOpnames.filter(o => o.userEmail.toLowerCase() === selectedEmail);
-        const fSch = allSchedules.filter(s => s.userEmail.toLowerCase() === selectedEmail);
+        const fSch = allSchedules.filter(s => s.userEmail.toLowerCase() === selectedEmail).sort((a,b) => a.periodLabel.localeCompare(b.periodLabel, undefined, {numeric:true}));
 
-        // Logic for Stats and Table Rendering (Same as fixed version)
-        // Updated info-paket labels:
-        document.getElementById("info-paket").innerHTML = `
-            <div class="col-md-6"><p class="text-muted small m-0">Nama Paket</p><h6 class="fw-bold">${user?.packageName || '-'}</h6></div>
-            <div class="col-md-6 text-end"><p class="text-muted small m-0">Penyedia Jasa</p><h6 class="fw-bold">${user?.contractorName || '-'}</h6></div>
-            <div class="col-md-4"><p class="text-muted small m-0">Tgl Kontrak</p><h6 class="fw-bold">${user?.contractDate || '-'}</h6></div>
-            <div class="col-md-4 text-center"><p class="text-muted small m-0">Tgl PHO</p><h6 class="fw-bold text-primary">${user?.phoDate || '-'}</h6></div>
-            <div class="col-md-4 text-end"><p class="text-muted small m-0">Keterangan</p><h6 class="fw-bold">${user?.handlingLength || '-'}</h6></div>
-        `;
-        // ... (Remaining table and chart logic)
+        let totalFisik = 0, totalRealisasi = 0;
+        fCon.forEach(c => {
+            totalFisik += (c.volume * c.unitPrice);
+            const opn = fOpn.filter(o => o.itemName.startsWith(c.itemCodeAndName.substring(0,10)));
+            totalRealisasi += (opn.reduce((acc, cur) => acc + (cur.calculatedVolume || 0), 0) * c.unitPrice);
+        });
+        const ppn = user?.ppnPercentage || 11.0;
+        document.getElementById("stat-progres").innerText = totalFisik > 0 ? (totalRealisasi/totalFisik*100).toFixed(2) + " %" : "0.00 %";
+        document.getElementById("stat-items").innerText = fCon.length + " Items";
+        document.getElementById("stat-nilai").innerText = formatCurrency(totalFisik + (totalFisik * ppn / 100));
+        
+        document.getElementById("info-paket").innerHTML = `<div class="col-md-6"><b>Nama Paket:</b> ${user?.packageName || '-'}</div><div class="col-md-6 text-end"><b>Penyedia:</b> ${user?.contractorName || '-'}</div><div class="col-md-4"><b>Tgl PHO:</b> ${user?.phoDate || '-'}</div><div class="col-md-4 text-center"><b>Keterangan:</b> ${user?.handlingLength || '-'}</div>`;
+
+        const tc = document.getElementById("table-kontrak-body"); tc.innerHTML = "";
+        fCon.forEach(c => tc.innerHTML += `<tr><td>${c.division}</td><td>${c.itemCodeAndName}</td><td class="text-center">${c.unit}</td><td class="text-end">${formatDec(c.volume)}</td><td class="text-end">${formatDec(c.unitPrice)}</td><td class="text-end fw-bold">${formatDec(c.volume*c.unitPrice)}</td></tr>`);
+
+        const to = document.getElementById("table-opname-body"); to.innerHTML = "";
+        fOpn.forEach(o => to.innerHTML += `<tr><td>${o.dateString}</td><td>${o.roadName}</td><td>${o.location}</td><td>${o.itemName}</td><td class="text-center">${o.unit}</td><td class="text-end">${formatDec(o.calculatedVolume)}</td><td class="text-center"><img src="${o.photoUri}" width="35" onclick="previewPhoto('${o.photoUri}')" style="cursor:pointer; border-radius:5px;"></td></tr>`);
+
+        if (fSch.length > 0) updateChartAndTable(fSch);
+    }
+
+    function updateChartAndTable(data) {
+        if (chartInstance) chartInstance.destroy();
+        const ctx = document.getElementById('kurvaS').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.map(d => d.periodLabel),
+                datasets: [
+                    { label: 'Renc Fisik', data: data.map(d => d.rencFisik), borderColor: 'red', tension: 0.4 },
+                    { label: 'Real Fisik', data: data.map(d => d.realFisik), borderColor: 'blue', tension: 0.4 },
+                    { label: 'Real Keu', data: data.map(d => d.realKeu), borderColor: 'green', tension: 0.4 }
+                ]
+            }
+        });
+        let html = `<table class="table table-bordered align-middle"><thead><tr class="table-light"><th>Minggu</th>`;
+        data.forEach(d => html += `<th>${d.periodLabel}</th>`);
+        html += `</tr></thead><tbody><tr><td>Rencana (%)</td>`;
+        data.forEach(d => html += `<td>${d.rencFisik || '-'}</td>`);
+        html += `</tr><tr><td>Real Fisik (%)</td>`;
+        data.forEach(d => html += `<td>${d.realFisik || '-'}</td>`);
+        html += `</tr><tr><td>Real Keu (%)</td>`;
+        data.forEach(d => html += `<td>${d.realKeu || '-'}</td>`);
+        html += `</tr></tbody></table>`;
+        document.getElementById("table-progres-container").innerHTML = html;
     }
 
     function showTab(t) {
         document.querySelectorAll('.tab-pane, .nav-link').forEach(el => el.classList.remove('active'));
         document.getElementById('tab-'+t).classList.add('active');
         document.getElementById('btn-'+t).classList.add('active');
+        document.getElementById('tab-title').innerText = document.getElementById('btn-'+t).innerText.trim();
     }
+
+    function filterOpnameTable() {
+        let val = document.getElementById("searchOpname").value.toLowerCase();
+        document.querySelectorAll("#table-opname-body tr").forEach(row => { row.style.display = row.innerText.toLowerCase().includes(val) ? "" : "none"; });
+    }
+
+    function adminLogin() {
+        const p = prompt("Password Admin:");
+        if(p === 'eProject@2026') { localStorage.setItem('isSuperAdmin', 'true'); location.reload(); }
+    }
+
+    function previewPhoto(u) { document.getElementById("modalImg").src = u; document.getElementById("photoModal").style.display = "flex"; }
+    function renderUserList() { /* User list for super admin */ }
 
     init();
 </script>
